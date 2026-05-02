@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="/static/favicon.ico">
+ <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="FileForge – Transform any file instantly. Convert PDF, DOCX, images and more." />
+  <meta name="theme-color" content="#0d0e12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>FileForge – File Converter</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+
+  <style>
+   
+  </style>
+</head>
+<body>
+
+  <div class="fc-wrap" role="main">
+    <div class="fc-glow" aria-hidden="true"></div>
+
+    <div class="fc-inner">
+
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <header class="fc-header">
+        <div class="fc-badge">FileForge</div>
+        <h1 class="fc-title">FileForge</h1>
+        <p class="fc-sub">Transform any file instantly</p>
+      </header>
+
+      <!-- ── Drop Zone ──────────────────────────────────────── -->
+      <div class="fc-drop" id="dropZone" role="button" tabindex="0" aria-label="Drop files here or click to browse">
+        
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp,.xls,.xlsx,.csv,
+          application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+
+        <div class="fc-drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="fc-drop-title">Drop files here or click to browse</div>
+       <div class="fc-drop-sub">PDF, DOCX, JPG, PNG, WEBP, XLS, XLSX, CSV supported</div>
+      </div>
+
+      <!-- ── File List ──────────────────────────────────────── -->
+      <ul class="fc-files" id="fileList" role="list" aria-label="Selected files"></ul>
+
+      <!-- ── Stats Bar ──────────────────────────────────────── -->
+      <div class="fc-stats" id="statsBar" role="status" aria-live="polite" aria-atomic="true">
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statCount">0</div>
+          <div class="fc-stat-key">Files</div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statSize">0 KB</div>
+          <div class="fc-stat-key">Total size</div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statType">—</div>
+          <div class="fc-stat-key">Detected</div>
+        </div>
+      </div>
+
+      <div class="fc-divider" role="separator" aria-hidden="true"></div>
+
+      <!-- ── Conversion Options ─────────────────────────────── -->
+      <p class="fc-label" id="convLabel">Choose Conversion</p>
+
+      <div class="fc-grid" role="group" aria-labelledby="convLabel">
+
+        <!-- Image → PDF -->
+        <button class="fc-btn v-img" type="button" aria-pressed="false" data-action="img2pdf" aria-label="Convert Image to PDF">
+          <div class="fc-btn-icon ic-amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Image → PDF</div>
+            <div class="fc-btn-fmt">JPG, PNG, WEBP</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- PDF → DOCX -->
+        <button class="fc-btn v-docx" type="button" aria-pressed="false" data-action="pdf2docx" aria-label="Convert PDF to DOCX">
+          <div class="fc-btn-icon ic-blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">PDF → DOCX</div>
+            <div class="fc-btn-fmt">Editable Word doc</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- DOCX → PDF -->
+        <button class="fc-btn v-pdf" type="button" aria-pressed="false" data-action="docx2pdf" aria-label="Convert DOCX to PDF">
+          <div class="fc-btn-icon ic-red" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 13h6M9 17h3"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">DOCX → PDF</div>
+            <div class="fc-btn-fmt">Locked document</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Merge PDFs -->
+        <button class="fc-btn v-merge" type="button" aria-pressed="false" data-action="mergepdf" aria-label="Merge PDFs">
+          <div class="fc-btn-icon ic-green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c88a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Merge PDFs</div>
+            <div class="fc-btn-fmt">Combine multiple</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- PDF → Excel -->
+        <button class="fc-btn v-blue" type="button" aria-pressed="false" data-action="pdf2excel" aria-label="PDF to Excel">
+          <div class="fc-btn-icon ic-blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M8 8h8M8 12h8M8 16h5"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">PDF → Excel</div>
+            <div class="fc-btn-fmt">Extract tables</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Excel → PDF -->
+        <button class="fc-btn v-blue" type="button" aria-pressed="false" data-action="excel2pdf" aria-label="Excel to PDF">
+          <div class="fc-btn-icon ic-blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M14 2v6h6"/>
+              <path d="M8 13h8M8 17h6"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Excel → PDF</div>
+            <div class="fc-btn-fmt">XLS, XLSX, CSV</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Split PDF -->
+        <button class="fc-btn v-amber" type="button" aria-pressed="false" data-action="splitpdf" aria-label="Split PDF">
+          <div class="fc-btn-icon ic-amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v18"/>
+              <path d="M8 7l4-4 4 4"/>
+              <path d="M8 17l4 4 4-4"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Split PDF</div>
+            <div class="fc-btn-fmt">Extract pages</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- PDF → Text -->
+        <button class="fc-btn v-green" type="button" aria-pressed="false" data-action="pdf2text" aria-label="PDF to Text">
+          <div class="fc-btn-icon ic-green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c88a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="3" width="16" height="18" rx="2"/>
+              <path d="M7 8h10M7 12h10M7 16h6"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">PDF → Text</div>
+            <div class="fc-btn-fmt">Extract content</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Protect PDF -->
+        <button class="fc-btn v-red" type="button" aria-pressed="false" data-action="protectpdf" aria-label="Protect PDF">
+          <div class="fc-btn-icon ic-red" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="10" width="12" height="10" rx="2"/>
+              <path d="M8 10V7a4 4 0 018 0v3"/>
+              <circle cx="12" cy="15" r="1"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Protect PDF</div>
+            <div class="fc-btn-fmt">Add password</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Compress PDF -->
+        <button class="fc-btn v-amber" type="button" aria-pressed="false" data-action="compresspdf" aria-label="Compress PDF">
+          <div class="fc-btn-icon ic-amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <path d="M12 8v8"/>
+              <path d="M8 12h8"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Compress PDF</div>
+            <div class="fc-btn-fmt">Reduce size</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- OCR -->
+        <!-- <button class="fc-btn v-green" type="button" aria-pressed="false" data-action="ocr" aria-label="OCR Scan">
+          <div class="fc-btn-icon ic-green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c88a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <path d="M7 8h10M7 12h10M7 16h6"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">OCR Scan</div>
+            <div class="fc-btn-fmt">Image → Text</div>
+          </div>
+          <span class="fc-arrow">↗</span>
+        </button> -->
+
+      </div>
+
+      <!-- ── Convert CTA ─────────────────────────────────────── -->
+      <button class="fc-convert" id="convertBtn" type="button" disabled aria-disabled="true">
+        <span class="shimmer" aria-hidden="true"></span>
+        <span id="convertLabel">Select files &amp; format to convert</span>
+      </button>
+
+     <!-- Split PDF Modal -->
+      <div class="fc-modal" id="splitModal">
+        <div class="fc-modal-backdrop"></div>
+
+        <div class="fc-modal-box">
+          <h2 class="fc-modal-title">Split PDF</h2>
+          <p class="fc-modal-sub">Enter pages you want to extract</p>
+
+          <input 
+            type="text" 
+            id="pageRangeInput"
+            class="fc-modal-input"
+            placeholder="Example: 1,3-5,8"
+          />
+
+          <div class="fc-modal-actions">
+            <button class="fc-modal-cancel" id="closeModal">Cancel</button>
+            <button class="fc-modal-apply" id="applySplit">Apply</button>
+          </div>
+        </div>
+      </div>
+
+     <!-- Excel to PDF Modal -->
+    <div class="fc-modal" id="excelModal">
+
+      <div class="fc-modal-backdrop"></div>
+
+      <div class="fc-modal-box" style="max-width:700px;">
+
+        <h2 class="fc-modal-title">Excel to PDF Settings</h2>
+
+        <p class="fc-modal-sub">Preview + choose layout</p>
+
+        <!-- Controls -->
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+          <select id="excelOrientation" class="fc-modal-input">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+
+          <select id="excelFit" class="fc-modal-input">
+            <option value="fit">Fit to page</option>
+            <option value="normal">Normal</option>
+          </select>
+        </div>
+
+        <!-- Preview -->
+        <div id="excelPreviewWrapper">
+          <div id="excelPreview"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="fc-modal-actions">
+          <button class="fc-modal-cancel" id="closeExcelModal">Cancel</button>
+          <button class="fc-modal-apply" id="applyExcel">Apply</button>
+        </div>
+
+      </div>
+    </div>
+    <!--PDF TO EXCEL -->
+    <div class="fc-modal" id="pdfExcelModal">
+      <div class="fc-modal-backdrop"></div>
+
+      <div class="fc-modal-box">
+        <h2 class="fc-modal-title">PDF to Excel Settings</h2>
+        <p class="fc-modal-sub">Choose extraction type</p>
+
+        <select id="pdfExcelMode" class="fc-modal-input">
+          <option value="table">Extract Tables</option>
+          <option value="text">Extract All Text</option>
+        </select>
+
+        <div class="fc-modal-actions">
+          <button class="fc-modal-cancel" id="closePdfExcelModal">Cancel</button>
+          <button class="fc-modal-apply" id="applyPdfExcel">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Protect PDF Modal -->
+    <div class="fc-modal" id="protectModal">
+      <div class="fc-modal-backdrop"></div>
+
+      <div class="fc-modal-box">
+        <h2 class="fc-modal-title">Protect PDF</h2>
+        <p class="fc-modal-sub">Enter password to secure your PDF</p>
+
+        <input 
+          type="password" 
+          id="pdfPassword"
+          class="fc-modal-input"
+          placeholder="Enter password"
+        />
+
+        <input 
+          type="password" 
+          id="confirmPassword"
+          class="fc-modal-input"
+          placeholder="Confirm password"
+          style="margin-top:10px;"
+        />
+
+        <div class="fc-modal-actions">
+          <button class="fc-modal-cancel" id="closeProtectModal">Cancel</button>
+          <button class="fc-modal-apply" id="applyProtect">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <!-- ── Toast ──────────────────────────────────────────────── -->
+  <div class="fc-toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="dot" aria-hidden="true"></div>
+    <span id="toastMsg">Done!</span>
+  </div>
+
+  <script>
+   'use strict';
+
+/* ───────── STATE ───────── */
+let files = [];
+let selectedAction = null;
+
+/* ───────── DOM ───────── */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileListEl = document.getElementById('fileList');
+const statsBar = document.getElementById('statsBar');
+
+const convertBtn = document.getElementById('convertBtn');
+const convertLbl = document.getElementById('convertLabel');
+
+const toast = document.getElementById('toast');
+const toastMsg = document.getElementById('toastMsg');
+
+const splitModal = document.getElementById('splitModal');
+const pageRangeInput = document.getElementById('pageRangeInput');
+const closeModal = document.getElementById('closeModal');
+const applySplit = document.getElementById('applySplit');
+
+const protectModal = document.getElementById('protectModal');
+const pdfPassword = document.getElementById('pdfPassword');
+const confirmPassword = document.getElementById('confirmPassword');
+const closeProtectModal = document.getElementById('closeProtectModal');
+const applyProtect = document.getElementById('applyProtect');
+
+const pdfExcelModal = document.getElementById('pdfExcelModal');
+const pdfExcelMode = document.getElementById('pdfExcelMode');
+const closePdfExcelModal = document.getElementById('closePdfExcelModal');
+const applyPdfExcel = document.getElementById('applyPdfExcel');
+
+const excelModal = document.getElementById('excelModal');
+const excelOrientation = document.getElementById('excelOrientation');
+const excelFit = document.getElementById('excelFit');
+const closeExcelModal = document.getElementById('closeExcelModal');
+const applyExcel = document.getElementById('applyExcel');
+
+/* ───────── DROP ZONE ───────── */
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+  if (!dropZone.contains(e.relatedTarget)) {
+    dropZone.classList.remove('drag-over');
+  }
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  setFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', (e) => setFiles(e.target.files));
+
+/* ───────── FILE HANDLING ───────── */
+function setFiles(raw) {
+  files = Array.from(raw);
+  renderFiles();
+  updateStats();
+  updateBtn();
+}
+
+function removeFile(index) {
+  files.splice(index, 1);
+  renderFiles();
+  updateStats();
+  updateBtn();
+}
+
+function getExt(name) {
+  return name.split('.').pop().toLowerCase();
+}
+
+function fmtSize(b) {
+  return b >= 1_048_576
+    ? (b / 1_048_576).toFixed(1) + ' MB'
+    : b >= 1024
+    ? (b / 1024).toFixed(0) + ' KB'
+    : b + ' B';
+}
+
+/* ───────── FILE PREVIEW RENDER ───────── */
+function renderFiles() {
+  if (!files.length) {
+    fileListEl.classList.remove('visible');
+    fileListEl.innerHTML = '';
+    return;
+  }
+
+  fileListEl.classList.add('visible');
+
+  fileListEl.innerHTML = files.map((f, i) => {
+    const ext = getExt(f.name);
+    const isImage = ['jpg','jpeg','png','webp'].includes(ext);
+
+    let preview = '';
+
+    // IMAGE
+    if (isImage) {
+      const url = URL.createObjectURL(f);
+      preview = `<img src="${url}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;">`;
+    }
+
+    // PDF
+    else if (ext === 'pdf') {
+      const url = URL.createObjectURL(f);
+      preview = `<iframe src="${url}" style="width:42px;height:42px;border:none;border-radius:8px;"></iframe>`;
+    }
+
+    // DOCX
+    else if (ext === 'docx') {
+      preview = `<div style="width:42px;height:42px;background:#3b82f6;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;">DOCX</div>`;
+    }
+
+    // EXCEL
+    else if (ext === 'xls' || ext === 'xlsx') {
+      preview = `<div style="width:42px;height:42px;background:#22c55e;color:#fff;
+        display:flex;align-items:center;justify-content:center;border-radius:8px;">
+        XLS
+      </div>`;
+    }
+
+    else if (ext === 'csv') {
+      preview = `<div style="width:42px;height:42px;background:#16a34a;color:#fff;
+        display:flex;align-items:center;justify-content:center;border-radius:8px;">
+        CSV
+      </div>`;
+    }
+
+    // DEFAULT
+    else {
+      preview = `<div style="width:42px;height:42px;background:#2a2d3a;color:#a78bfa;display:flex;align-items:center;justify-content:center;border-radius:8px;">${ext.toUpperCase()}</div>`;
+    }
+
+    return `
+      <li class="fc-file-item">
+        ${preview}
+        <span class="fc-file-name">${f.name}</span>
+        <span class="fc-file-size">${fmtSize(f.size)}</span>
+        <button class="fc-file-rm" onclick="removeFile(${i})">✕</button>
+      </li>
+    `;
+  }).join('');
+}
+
+/* ───────── STATS ───────── */
+function updateStats() {
+  if (!files.length) {
+    statsBar.classList.remove('visible');
+    return;
+  }
+
+  statsBar.classList.add('visible');
+
+  document.getElementById('statCount').textContent = files.length;
+
+  const total = files.reduce((a, f) => a + f.size, 0);
+  document.getElementById('statSize').textContent = fmtSize(total);
+
+  document.getElementById('statType').textContent =
+    [...new Set(files.map(f => getExt(f.name)))]
+      .slice(0, 2)
+      .join(', ');
+}
+
+/* ───────── ACTION BUTTONS ───────── */
+document.querySelectorAll('.fc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+
+    document.querySelectorAll('.fc-btn').forEach(b => {
+      b.classList.remove('selected');
+      b.setAttribute('aria-pressed', 'false');
+    });
+
+    btn.classList.add('selected');
+    btn.setAttribute('aria-pressed', 'true');
+
+    selectedAction = btn.dataset.action;
+
+    if (!files.length) {
+      showToast("Select files first", true);
+      return;
+    }
+
+    const hasPDF = files.some(f => f.name.toLowerCase().endsWith('.pdf'));
+
+    if (selectedAction === 'splitpdf') {
+      if (!hasPDF) {
+        showToast("Only PDF allowed", true);
+        return;
+      }
+      splitModal.classList.add('show');
+    }
+
+    if (selectedAction === 'protectpdf') {
+      if (!hasPDF) {
+        showToast("Only PDF allowed", true);
+        return;
+      }
+      protectModal.classList.add('show');
+    }
+
+    if (selectedAction === 'pdf2excel') {
+      if (!hasPDF) {
+        showToast("Only PDF allowed", true);
+        return;
+      }
+      pdfExcelModal.classList.add('show');
+    }
+
+    if (selectedAction === 'excel2pdf') {
+      const hasExcel = files.some(f =>
+        ['xls','xlsx','csv'].includes(f.name.toLowerCase().split('.').pop())
+      );
+
+      if (!hasExcel) {
+        showToast("Only Excel files allowed", true);
+        return;
+      }
+
+      excelModal.classList.add('show');
+    }
+
+    updateBtn();
+  });
+});
+
+/* ───────── BUTTON STATE ───────── */
+function updateBtn() {
+  const ready = files.length > 0 && selectedAction;
+
+  convertBtn.disabled = !ready;
+
+  convertLbl.textContent = ready
+    ? `Convert ${files.length} file(s)`
+    : files.length
+      ? 'Select format'
+      : 'Select files & format';
+}
+
+/* ───────── TOAST ───────── */
+let toastTimer;
+
+function showToast(msg, err = false) {
+  toast.className = 'fc-toast' + (err ? ' err' : '');
+  toastMsg.textContent = msg;
+
+  toast.classList.add('show');
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+/* ───────── MODAL ───────── */
+closeModal.onclick = () => splitModal.classList.remove('show');
+
+applySplit.onclick = () => {
+  if (!pageRangeInput.value.trim()) {
+    showToast("Enter page range", true);
+    return;
+  }
+
+  splitModal.classList.remove('show');
+  showToast("Range applied ✓");
+};
+
+closeProtectModal.onclick = () => {
+  protectModal.classList.remove('show');
+};
+
+applyProtect.onclick = () => {
+  const pass = pdfPassword.value.trim();
+  const confirm = confirmPassword.value.trim();
+
+  if (!pass) {
+    showToast("Enter password", true);
+    return;
+  }
+
+  if (pass !== confirm) {
+    showToast("Passwords do not match", true);
+    return;
+  }
+
+  protectModal.classList.remove('show');
+  showToast("Password set ✓");
+};
+
+closeExcelModal.onclick = () => {
+  excelModal.classList.remove('show');
+};
+
+applyExcel.onclick = () => {
+  excelModal.classList.remove('show');
+  showToast("Excel settings applied ✓");
+};
+
+
+closePdfExcelModal.onclick = () => {
+  pdfExcelModal.classList.remove('show');
+};
+
+applyPdfExcel.onclick = () => {
+  pdfExcelModal.classList.remove('show');
+  showToast("Settings applied ✓");
+};
+
+/* ───────── CONVERT ───────── */
+convertBtn.addEventListener('click', async () => {
+  if (!files.length || !selectedAction) return;
+
+  const fd = new FormData();
+  files.forEach(f => fd.append('files', f));
+  fd.append('action', selectedAction);
+
+  if (selectedAction === 'splitpdf') {
+    fd.append('page_range', pageRangeInput.value);
+  }
+
+  if (selectedAction === 'protectpdf') {
+    fd.append('password', pdfPassword.value);
+  }
+
+  if (selectedAction === 'pdf2excel') {
+    fd.append('mode', pdfExcelMode.value);
+  }
+
+  if (selectedAction === 'excel2pdf') {
+    fd.append('orientation', excelOrientation.value);
+    fd.append('fit', excelFit.value);
+  }
+
+  convertLbl.textContent = "Converting...";
+  convertBtn.disabled = true;
+
+  try {
+    const res = await fetch('/convert', {
+      method: 'POST',
+      body: fd
+    });
+
+    if (!res.ok) throw new Error("Conversion failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+
+    // FIXED: get original filename
+    const baseName = files[0].name.split('.')[0];
+
+    // clean output filename
+    a.download = `${baseName}.pdf`;
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+    showToast("Converted ✓");
+
+  } catch (err) {
+    showToast(err.message, true);
+  } finally {
+    updateBtn();
+  }
+});
+
+  </script>
+</body>
+</html>

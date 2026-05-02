@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="FileForge – Transform any file instantly. Convert PDF, DOCX, images and more." />
+  <meta name="theme-color" content="#0d0e12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>FileForge – File Converter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="fc-wrap" role="main">
+    <div class="fc-glow" aria-hidden="true"></div>
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <div class="fc-inner">
+      <header class="fc-header">
+        <div class="fc-badge" aria-label="App name">FileForge</div>
+        <h1 class="fc-title">FileForge</h1>
+        <p class="fc-sub">Transform any file instantly</p>
+      </header>
+
+      <!-- ── Drop Zone ──────────────────────────────────────── -->
+      <div
+        class="fc-drop"
+        id="dropZone"
+        role="button"
+        tabindex="0"
+        aria-label="Drop files here or click to browse"
+      >
+        <input
+          type="file"
+          id="fileInput"
+          multiple
+          accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp"
+          aria-label="File picker"
+        />
+        <div class="fc-drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="fc-drop-title">Drop files here or click to browse</div>
+        <div class="fc-drop-sub">PDF, DOCX, JPG, PNG, WEBP supported</div>
+      </div>
+
+      <!-- ── File List ──────────────────────────────────────── -->
+      <ul class="fc-files" id="fileList" role="list" aria-label="Selected files"></ul>
+
+      <!-- ── Stats Bar ──────────────────────────────────────── -->
+      <div class="fc-stats" id="statsBar" role="status" aria-live="polite" aria-atomic="true">
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statCount">0</div>
+          <div class="fc-stat-key">Files</div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statSize">0 KB</div>
+          <div class="fc-stat-key">Total size</div>
+        </div>
+        <div class="fc-stat">
+          <div class="fc-stat-val" id="statType">—</div>
+          <div class="fc-stat-key">Detected</div>
+        </div>
+      </div>
+
+      <div class="fc-divider" role="separator" aria-hidden="true"></div>
+
+      <!-- ── Conversion Options ─────────────────────────────── -->
+      <p class="fc-label" id="convLabel">Choose Conversion</p>
+
+      <div class="fc-grid" role="group" aria-labelledby="convLabel">
+
+        <!-- Image → PDF -->
+        <button
+          class="fc-btn v-img"
+          type="button"
+          aria-pressed="false"
+          data-action="img2pdf"
+          aria-label="Convert Image to PDF"
+        >
+          <div class="fc-btn-icon ic-amber" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Image → PDF</div>
+            <div class="fc-btn-fmt">JPG, PNG, WEBP</div>
+          </div>
+          <span class="fc-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <!-- PDF → DOCX -->
+        <button
+          class="fc-btn v-docx"
+          type="button"
+          aria-pressed="false"
+          data-action="pdf2docx"
+          aria-label="Convert PDF to DOCX"
+        >
+          <div class="fc-btn-icon ic-blue" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">PDF → DOCX</div>
+            <div class="fc-btn-fmt">Editable Word doc</div>
+          </div>
+          <span class="fc-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <!-- DOCX → PDF -->
+        <button
+          class="fc-btn v-pdf"
+          type="button"
+          aria-pressed="false"
+          data-action="docx2pdf"
+          aria-label="Convert DOCX to PDF"
+        >
+          <div class="fc-btn-icon ic-red" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 13h6M9 17h3"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">DOCX → PDF</div>
+            <div class="fc-btn-fmt">Locked document</div>
+          </div>
+          <span class="fc-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <!-- Merge PDFs -->
+        <button
+          class="fc-btn v-merge"
+          type="button"
+          aria-pressed="false"
+          data-action="mergepdf"
+          aria-label="Merge multiple PDFs"
+        >
+          <div class="fc-btn-icon ic-green" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="#22c88a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+            </svg>
+          </div>
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Merge PDFs</div>
+            <div class="fc-btn-fmt">Combine multiple</div>
+          </div>
+          <span class="fc-arrow" aria-hidden="true">↗</span>
+        </button>
+
+      </div><!-- /.fc-grid -->
+
+      <!-- ── Convert CTA ─────────────────────────────────────── -->
+      <button
+        class="fc-convert"
+        id="convertBtn"
+        type="button"
+        disabled
+        aria-disabled="true"
+        aria-live="polite"
+      >
+        <span class="shimmer" aria-hidden="true"></span>
+        <span id="convertLabel">Select files &amp; format to convert</span>
+      </button>
+
+    </div><!-- /.fc-inner -->
+  </div><!-- /.fc-wrap -->
+
+  <!-- ── Toast Notification ─────────────────────────────────── -->
+  <div
+    class="fc-toast"
+    id="toast"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="dot" aria-hidden="true"></div>
+    <span id="toastMsg">Done!</span>
+  </div>
+
+  <script>
+    /* ──────────────────────────────────────────────────────────
+       FileForge – main.js (inline)
+       ────────────────────────────────────────────────────────── */
+    'use strict';
+
+    // ── State ──────────────────────────────────────────────────
+    let files = [];
+    let selectedAction = null;
+
+    // ── DOM References ─────────────────────────────────────────
+    const dropZone    = document.getElementById('dropZone');
+    const fileInput   = document.getElementById('fileInput');
+    const fileListEl  = document.getElementById('fileList');
+    const statsBar    = document.getElementById('statsBar');
+    const convertBtn  = document.getElementById('convertBtn');
+    const convertLbl  = document.getElementById('convertLabel');
+    const toast       = document.getElementById('toast');
+    const toastMsg    = document.getElementById('toastMsg');
+
+    // ── Drop Zone Interactions ─────────────────────────────────
+    dropZone.addEventListener('click', (e) => {
+      if (e.target !== fileInput) fileInput.click();
+    });
+
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      if (!dropZone.contains(e.relatedTarget)) {
+        dropZone.classList.remove('drag-over');
+      }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      setFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => setFiles(e.target.files));
+
+    // ── File Helpers ───────────────────────────────────────────
+    function setFiles(rawFiles) {
+      files = Array.from(rawFiles);
+      renderFiles();
+      updateStats();
+      updateBtn();
+    }
+
+    function getExt(name) {
+      return name.split('.').pop().toUpperCase();
+    }
+
+    function fmtSize(bytes) {
+      if (bytes >= 1_048_576) return (bytes / 1_048_576).toFixed(1) + ' MB';
+      if (bytes >= 1_024)     return (bytes / 1_024).toFixed(0) + ' KB';
+      return bytes + ' B';
+    }
+
+    // ── Render File List ───────────────────────────────────────
+    function renderFiles() {
+      if (!files.length) {
+        fileListEl.classList.remove('visible');
+        fileListEl.innerHTML = '';
+        return;
+      }
+
+      fileListEl.classList.add('visible');
+      fileListEl.innerHTML = files.map((f, i) => /* html */`
+        <li class="fc-file-item" role="listitem">
+          <span class="fc-file-ext" aria-label="File type">${getExt(f.name)}</span>
+          <span class="fc-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+          <span class="fc-file-size">${fmtSize(f.size)}</span>
+          <button
+            class="fc-file-rm"
+            type="button"
+            aria-label="Remove ${escHtml(f.name)}"
+            data-index="${i}"
+          >✕</button>
+        </li>
+      `).join('');
+
+      // Event delegation for remove buttons
+      fileListEl.querySelectorAll('.fc-file-rm').forEach((btn) => {
+        btn.addEventListener('click', () => removeFile(Number(btn.dataset.index)));
+      });
+    }
+
+    function escHtml(str) {
+      return str.replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function removeFile(index) {
+      files.splice(index, 1);
+      renderFiles();
+      updateStats();
+      updateBtn();
+    }
+
+    // ── Stats Bar ──────────────────────────────────────────────
+    function updateStats() {
+      if (!files.length) {
+        statsBar.classList.remove('visible');
+        return;
+      }
+      statsBar.classList.add('visible');
+      document.getElementById('statCount').textContent = files.length;
+      const total = files.reduce((s, f) => s + f.size, 0);
+      document.getElementById('statSize').textContent = fmtSize(total);
+      const exts = [...new Set(files.map((f) => getExt(f.name)))];
+      document.getElementById('statType').textContent = exts.slice(0, 2).join(', ');
+    }
+
+    // ── Conversion Button Selection ────────────────────────────
+    document.querySelectorAll('.fc-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.fc-btn').forEach((b) => {
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+        selectedAction = btn.dataset.action;
+        updateBtn();
+      });
+    });
+
+    // ── Update Convert Button State ────────────────────────────
+    function updateBtn() {
+      const ready = files.length > 0 && selectedAction;
+      convertBtn.disabled = !ready;
+      convertBtn.setAttribute('aria-disabled', String(!ready));
+
+      if (ready) {
+        convertLbl.textContent = `Convert ${files.length} file${files.length > 1 ? 's' : ''} now`;
+      } else if (files.length) {
+        convertLbl.textContent = 'Select a conversion format';
+      } else {
+        convertLbl.textContent = 'Select files & format to convert';
+      }
+    }
+
+    // ── Toast Notification ─────────────────────────────────────
+    let toastTimer = null;
+
+    function showToast(msg, isErr = false) {
+      toast.className = 'fc-toast' + (isErr ? ' err' : '');
+      toastMsg.textContent = msg;
+      // Force reflow to restart transition
+      void toast.offsetWidth;
+      toast.classList.add('show');
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    // ── Upload & Convert ───────────────────────────────────────
+    convertBtn.addEventListener('click', upload);
+
+    function upload() {
+      if (!files.length || !selectedAction) return;
+
+      const fd = new FormData();
+      files.forEach((f) => fd.append('files', f));
+      fd.append('action', selectedAction);
+
+      convertLbl.textContent = 'Converting…';
+      convertBtn.disabled = true;
+      convertBtn.setAttribute('aria-disabled', 'true');
+
+      fetch('/convert', { method: 'POST', body: fd })
+        .then(async (r) => {
+          convertBtn.disabled = false;
+          convertBtn.setAttribute('aria-disabled', 'false');
+          updateBtn();
+
+          if (!r.ok) {
+            let errMsg = 'Conversion failed';
+            try {
+              const err = await r.json();
+              errMsg = err.error || errMsg;
+            } catch (_) { /* ignore */ }
+            throw new Error(errMsg);
+          }
+
+          return r.blob();
+        })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'converted_file';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+          showToast('File converted successfully ✓');
+        })
+        .catch((err) => {
+          convertBtn.disabled = false;
+          convertBtn.setAttribute('aria-disabled', 'false');
+          updateBtn();
+          showToast(err.message, true);
+        });
+    }
+  </script>
+</body>
+</html>
