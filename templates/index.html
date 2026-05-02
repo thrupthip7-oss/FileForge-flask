@@ -575,6 +575,57 @@ document.querySelectorAll('.fc-btn').forEach(btn => {
 
     const hasPDF = files.some(f => f.name.toLowerCase().endsWith('.pdf'));
 
+    const hasImage = files.some(f =>
+      ['jpg','jpeg','png','webp'].includes(f.name.toLowerCase().split('.').pop())
+    );
+
+    const hasDOCX = files.some(f =>
+      f.name.toLowerCase().endsWith('.docx')
+    );
+
+    const hasExcel = files.some(f =>
+      ['xls','xlsx','csv'].includes(f.name.toLowerCase().split('.').pop())
+    );
+
+    // 🚫 Restrict multiple files
+    if (files.length > 1 && selectedAction !== 'mergepdf') {
+      showToast("Only one file allowed for this action", true);
+      return;
+    }
+
+    // ✅ VALIDATIONS
+
+    if (selectedAction === 'img2pdf' && !hasImage) {
+      showToast("Only images allowed", true);
+      return;
+    }
+
+    if (selectedAction === 'pdf2docx' && !hasPDF) {
+      showToast("Only PDF allowed", true);
+      return;
+    }
+
+    if (selectedAction === 'docx2pdf' && !hasDOCX) {
+      showToast("Only DOCX allowed", true);
+      return;
+    }
+
+    if (selectedAction === 'mergepdf' && !hasPDF) {
+      showToast("Only PDFs allowed", true);
+      return;
+    }
+
+    if (selectedAction === 'pdf2text' && !hasPDF) {
+      showToast("Only PDF allowed", true);
+      return;
+    }
+
+    if (selectedAction === 'compresspdf' && !hasPDF) {
+      showToast("Only PDF allowed", true);
+      return;
+    }
+
+    // Existing modals (keep these)
     if (selectedAction === 'splitpdf') {
       if (!hasPDF) {
         showToast("Only PDF allowed", true);
@@ -600,15 +651,10 @@ document.querySelectorAll('.fc-btn').forEach(btn => {
     }
 
     if (selectedAction === 'excel2pdf') {
-      const hasExcel = files.some(f =>
-        ['xls','xlsx','csv'].includes(f.name.toLowerCase().split('.').pop())
-      );
-
       if (!hasExcel) {
         showToast("Only Excel files allowed", true);
         return;
       }
-
       excelModal.classList.add('show');
     }
 
