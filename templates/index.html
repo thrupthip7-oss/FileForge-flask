@@ -445,7 +445,8 @@ fileInput.addEventListener('change', (e) => setFiles(e.target.files));
 
 /* ───────── FILE HANDLING ───────── */
 function setFiles(raw) {
-  files = Array.from(raw);
+  // files = Array.from(raw);
+  files = Array.from(raw).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
   renderFiles();
   updateStats();
   updateBtn();
@@ -558,6 +559,7 @@ function updateStats() {
 document.querySelectorAll('.fc-btn').forEach(btn => {
   btn.addEventListener('click', () => {
 
+    // 1. Reset UI selection state
     document.querySelectorAll('.fc-btn').forEach(b => {
       b.classList.remove('selected');
       b.setAttribute('aria-pressed', 'false');
@@ -568,96 +570,114 @@ document.querySelectorAll('.fc-btn').forEach(btn => {
 
     selectedAction = btn.dataset.action;
 
+    // 2. Check if files are even uploaded
     if (!files.length) {
       showToast("Select files first", true);
       return;
     }
 
+    // 3. Helper checks for file types
     const hasPDF = files.some(f => f.name.toLowerCase().endsWith('.pdf'));
-
-    const hasImage = files.some(f =>
+    const hasImage = files.every(f => 
       ['jpg','jpeg','png','webp'].includes(f.name.toLowerCase().split('.').pop())
     );
-
-    const hasDOCX = files.some(f =>
-      f.name.toLowerCase().endsWith('.docx')
-    );
-
-    const hasExcel = files.some(f =>
+    const hasDOCX = files.some(f => f.name.toLowerCase().endsWith('.docx'));
+    const hasExcel = files.some(f => 
       ['xls','xlsx','csv'].includes(f.name.toLowerCase().split('.').pop())
     );
 
-    // 🚫 Restrict multiple files
-    if (files.length > 1 && selectedAction !== 'mergepdf') {
+    // 4. FIX: Allow multiple files for BOTH mergepdf and img2pdf
+    const multiAllowed = ['mergepdf', 'img2pdf'];
+    if (files.length > 1 && !multiAllowed.includes(selectedAction)) {
       showToast("Only one file allowed for this action", true);
+      
+      // Reset selection so the user doesn't accidentally click Convert
+      btn.classList.remove('selected');
+      selectedAction = null;
+      updateBtn();
       return;
     }
 
-    // ✅ VALIDATIONS
-
+    // 5. Action-specific type validations
     if (selectedAction === 'img2pdf' && !hasImage) {
-      showToast("Only images allowed", true);
-      return;
-    }
-
-    if (selectedAction === 'pdf2docx' && !hasPDF) {
+      showToast("Please select only images (JPG, PNG, WEBP)", true);
+      btn.classList.remove('selected');
+      selectedAction = null;
+    } 
+    else if (selectedAction === 'pdf2docx' && !hasPDF) {
       showToast("Only PDF allowed", true);
-      return;
-    }
-
-    if (selectedAction === 'docx2pdf' && !hasDOCX) {
+      btn.classList.remove('selected');
+      selectedAction = null;
+    } 
+    else if (selectedAction === 'docx2pdf' && !hasDOCX) {
       showToast("Only DOCX allowed", true);
-      return;
+      btn.classList.remove('selected');
+      selectedAction = null;
+    } 
+    else if (selectedAction === 'mergepdf') {
+        if (!hasPDF) {
+            showToast("Only PDFs can be merged", true);
+            selectedAction = null;
+        } 
+        // ADD THIS LIMIT CHECK:
+        else if (files.length > 15) { 
+            showToast("Maximum 15 PDFs allowed for merging", true);
+            selectedAction = null;
+        }
+        else if (files.length < 2) {
+            showToast("Select at least 2 PDFs to merge", true);
+            selectedAction = null;
+        }
     }
-
-    if (selectedAction === 'mergepdf' && !hasPDF) {
-      showToast("Only PDFs allowed", true);
-      return;
-    }
-
-    if (selectedAction === 'pdf2text' && !hasPDF) {
+    else if (selectedAction === 'pdf2text' && !hasPDF) {
       showToast("Only PDF allowed", true);
-      return;
-    }
-
-    if (selectedAction === 'compresspdf' && !hasPDF) {
+      btn.classList.remove('selected');
+      selectedAction = null;
+    } 
+    else if (selectedAction === 'compresspdf' && !hasPDF) {
       showToast("Only PDF allowed", true);
-      return;
+      btn.classList.remove('selected');
+      selectedAction = null;
     }
 
-    // Existing modals (keep these)
+    // 6. Handle Modals for specific tools
     if (selectedAction === 'splitpdf') {
       if (!hasPDF) {
         showToast("Only PDF allowed", true);
-        return;
+        selectedAction = null;
+      } else {
+        splitModal.classList.add('show');
       }
-      splitModal.classList.add('show');
     }
 
     if (selectedAction === 'protectpdf') {
       if (!hasPDF) {
         showToast("Only PDF allowed", true);
-        return;
+        selectedAction = null;
+      } else {
+        protectModal.classList.add('show');
       }
-      protectModal.classList.add('show');
     }
 
     if (selectedAction === 'pdf2excel') {
       if (!hasPDF) {
         showToast("Only PDF allowed", true);
-        return;
+        selectedAction = null;
+      } else {
+        pdfExcelModal.classList.add('show');
       }
-      pdfExcelModal.classList.add('show');
     }
 
     if (selectedAction === 'excel2pdf') {
       if (!hasExcel) {
         showToast("Only Excel files allowed", true);
-        return;
+        selectedAction = null;
+      } else {
+        excelModal.classList.add('show');
       }
-      excelModal.classList.add('show');
     }
 
+    // 7. Refresh the large "Convert" button state
     updateBtn();
   });
 });
@@ -786,14 +806,24 @@ convertBtn.addEventListener('click', async () => {
     const a = document.createElement('a');
     a.href = url;
 
-    // FIXED: get original filename
+    // ✅ FIX: correct extension handling
     const baseName = files[0].name.split('.')[0];
 
-    // clean output filename
-    a.download = `${baseName}.pdf`;
+    let ext = "pdf"; // default
+
+    if (selectedAction === "pdf2docx") ext = "docx";
+    else if (selectedAction === "excel2pdf") ext = "pdf";
+    else if (selectedAction === "pdf2excel") ext = "xlsx";
+    else if (selectedAction === "pdf2text" || selectedAction === "ocr") ext = "txt";
+    else if (selectedAction === "docx2pdf") ext = "pdf";
+    else if (selectedAction === "img2pdf") ext = "pdf";
+    else if (selectedAction === "mergepdf") ext = "pdf";
+    else if (selectedAction === "splitpdf") ext = "pdf";
+    else if (selectedAction === "compresspdf") ext = "pdf";
+
+    a.download = `${baseName}.${ext}`;
 
     a.click();
-
     URL.revokeObjectURL(url);
 
     showToast("Converted ✓");
@@ -804,7 +834,6 @@ convertBtn.addEventListener('click', async () => {
     updateBtn();
   }
 });
-
   </script>
 </body>
 </html>
