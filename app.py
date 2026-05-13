@@ -15,6 +15,8 @@ import subprocess
 import os
 import time
 import uuid
+import fitz
+import json
 
 app = Flask(__name__)
 
@@ -58,7 +60,7 @@ def validate_files(action, files):
         if action == 'img2pdf' and ext not in ['jpg', 'jpeg', 'png']:
             return "Only images (jpg, png) allowed for PDF conversion"
 
-        if action in ['pdf2docx', 'mergepdf', 'splitpdf', 'pdf2excel', 'pdf2text', 'protectpdf', 'compresspdf'] and ext != 'pdf':
+        if action in ['pdf2docx', 'mergepdf', 'splitpdf', 'pdf2excel', 'pdf2text', 'protectpdf', 'compresspdf','whiteout'] and ext != 'pdf':
             return "PDF file required"
 
         if action == 'docx2pdf' and ext != 'docx':
@@ -207,6 +209,41 @@ def compress_pdf(input_path, output_path):
     with open(output_path, "wb") as f:
         writer.write(f)
 
+def whiteout_pdf(input_path, output_path, whiteout_areas):
+
+    doc = fitz.open(input_path)
+
+    for area in whiteout_areas:
+
+        page_index = area['page'] - 1
+
+        if page_index < 0 or page_index >= len(doc):
+            continue
+
+        page = doc[page_index]
+
+        rect = fitz.Rect(
+            area['x'],
+            area['y'],
+            area['x'] + area['width'],
+            area['y'] + area['height']
+        )
+
+        page.add_redact_annot(
+            rect,
+            fill=(1, 1, 1)
+        )
+
+        page.apply_redactions()
+
+    doc.save(
+        output_path,
+        garbage=4,
+        deflate=True
+    )
+
+    doc.close()
+
 # ---------------- ROUTES ----------------
 
 @app.route('/')
@@ -273,6 +310,23 @@ def convert():
         elif action == 'compresspdf':
             output_path += ".pdf"
             compress_pdf(saved_paths[0], output_path)
+        elif action == 'whiteout':
+            output_path += ".pdf"
+
+            whiteout_areas = request.form.get('whiteout_areas')
+
+            if not whiteout_areas:
+                raise Exception("No whiteout areas provided")
+
+            import json
+
+            whiteout_areas = json.loads(whiteout_areas)
+
+            whiteout_pdf(
+                saved_paths[0],
+                output_path,
+                whiteout_areas
+            )
         else:
             return jsonify({'error': 'Invalid action'}), 400
 

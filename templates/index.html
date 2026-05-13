@@ -15,7 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
   <style>
    
   </style>
@@ -54,6 +55,21 @@
 
       <!-- ── File List ──────────────────────────────────────── -->
       <ul class="fc-files" id="fileList" role="list" aria-label="Selected files"></ul>
+        <div class="fc-stats" id="statsBar" role="status"></div>
+        <div id="pdfViewer"></div>
+
+        <!-- Whiteout Controls -->
+        <div id="pdfPreviewActions" style="display:none; margin:15px 0; gap:10px;">
+
+          <button id="downloadWhiteoutBtn" class="fc-modal-apply">
+            Download Whiteout PDF
+          </button>
+
+          <button id="closePreviewBtn" class="fc-modal-cancel">
+            Close Preview
+          </button>
+
+        </div>
 
       <!-- ── Stats Bar ──────────────────────────────────────── -->
       <div class="fc-stats" id="statsBar" role="status" aria-live="polite" aria-atomic="true">
@@ -235,6 +251,46 @@
           <span class="fc-arrow">↗</span>
         </button>
 
+        <!-- White Out -->
+        <button class="fc-btn v-red" type="button" data-action="whiteout">
+          <div class="fc-btn-icon ic-red">
+            ✦
+          </div>
+
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Whiteout PDF</div>
+            <div class="fc-btn-fmt">Hide sensitive areas</div>
+          </div>
+
+          <span class="fc-arrow">↗</span>
+        </button>
+
+        <!-- Water Mark -->
+
+        <!-- <button class="fc-btn v-blue" type="button" data-action="watermarkpdf">
+          <div class="fc-btn-icon ic-blue">💧</div>
+
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Watermark PDF</div>
+            <div class="fc-btn-fmt">Text or logo</div>
+          </div>
+
+          <span class="fc-arrow">↗</span>
+        </button> -->
+
+        <!-- Signature -->
+
+        <!-- <button class="fc-btn v-green" type="button" data-action="signpdf">
+          <div class="fc-btn-icon ic-green">✍</div>
+
+          <div class="fc-btn-content">
+            <div class="fc-btn-label">Sign PDF</div>
+            <div class="fc-btn-fmt">Draw or upload signature</div>
+          </div>
+
+          <span class="fc-arrow">↗</span>
+        </button> -->
+
         <!-- OCR -->
         <!-- <button class="fc-btn v-green" type="button" aria-pressed="false" data-action="ocr" aria-label="OCR Scan">
           <div class="fc-btn-icon ic-green" aria-hidden="true">
@@ -367,6 +423,42 @@
       </div>
     </div>
 
+    <!-- White out and Water marks and SIgnature  -->
+
+    <div class="fc-modal" id="signatureModal">
+
+      <div class="fc-modal-backdrop"></div>
+
+      <div class="fc-modal-box" style="max-width:700px;">
+
+        <h2 class="fc-modal-title">Create Signature</h2>
+
+        <canvas id="signaturePad"
+                width="600"
+                height="220"
+                style="
+                  width:100%;
+                  background:white;
+                  border-radius:14px;
+                  border:1px solid #444;
+                ">
+        </canvas>
+
+        <div style="display:flex;gap:10px;margin-top:14px;">
+
+          <button id="clearSignature" class="fc-modal-cancel">
+            Clear
+          </button>
+
+          <button id="saveSignature" class="fc-modal-apply">
+            Save Signature
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+
     </div>
   </div>
 
@@ -375,7 +467,7 @@
     <div class="dot" aria-hidden="true"></div>
     <span id="toastMsg">Done!</span>
   </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
    'use strict';
 
@@ -417,6 +509,25 @@ const excelFit = document.getElementById('excelFit');
 const closeExcelModal = document.getElementById('closeExcelModal');
 const applyExcel = document.getElementById('applyExcel');
 
+/* ───────── WHITEOUT / WATERMARK / SIGN ───────── */
+
+// const whiteoutToolbar = document.getElementById('whiteoutToolbar');
+const pdfPreviewActions = document.getElementById("pdfPreviewActions");
+const downloadWhiteoutBtn = document.getElementById("downloadWhiteoutBtn");
+const closePreviewBtn = document.getElementById("closePreviewBtn");
+
+const signatureModal = document.getElementById('signatureModal');
+const signatureCanvas = document.getElementById('signaturePad');
+const clearSignature = document.getElementById('clearSignature');
+const saveSignature = document.getElementById('saveSignature');
+let signaturePad = null;
+let signatureImage = null;
+
+/* WHITEOUT */
+let whiteoutAreas = [];
+let isDrawing = false;
+let startX, startY;
+
 /* ───────── DROP ZONE ───────── */
 dropZone.addEventListener('click', () => fileInput.click());
 
@@ -441,15 +552,303 @@ dropZone.addEventListener('drop', (e) => {
   setFiles(e.dataTransfer.files);
 });
 
+/* ───────── SIGNATURE PAD INIT ───────── */
+
+window.addEventListener('load', () => {
+
+  signaturePad = new SignaturePad(signatureCanvas, {
+    backgroundColor: 'white',
+    penColor: 'black'
+  });
+
+});
+
 fileInput.addEventListener('change', (e) => setFiles(e.target.files));
 
+async function renderPDF(file) {
+
+  const pdfViewer =
+    document.getElementById("pdfViewer");
+
+  pdfViewer.innerHTML = "";
+
+  whiteoutAreas = [];
+
+  const fileURL = URL.createObjectURL(file);
+
+  const pdf =
+    await pdfjsLib.getDocument(fileURL).promise;
+
+  for (
+    let pageNum = 1;
+    pageNum <= pdf.numPages;
+    pageNum++
+  ) {
+
+    const page = await pdf.getPage(pageNum);
+
+    // const viewport =
+    //   page.getViewport({ scale: 1.5 });
+    const scale = 2;
+
+    const viewport = page.getViewport({
+      scale: scale * window.devicePixelRatio
+    });
+
+    /* MAIN PDF */
+/* MAIN PDF CANVAS */
+const canvas = document.createElement("canvas");
+
+const ctx = canvas.getContext("2d");
+
+canvas.width = viewport.width;
+canvas.height = viewport.height;
+
+canvas.style.width =
+  viewport.width / window.devicePixelRatio + "px";
+
+canvas.style.height =
+  viewport.height / window.devicePixelRatio + "px";
+
+/* WRAPPER */
+const wrapper = document.createElement("div");
+
+wrapper.className = "pdf-page";
+
+wrapper.style.position = "relative";
+
+wrapper.style.marginBottom = "20px";
+
+/* DRAW LAYER */
+const drawLayer =
+  document.createElement("canvas");
+
+drawLayer.width = canvas.width;
+drawLayer.height = canvas.height;
+
+drawLayer.style.width = canvas.style.width;
+drawLayer.style.height = canvas.style.height;
+
+drawLayer.style.position = "absolute";
+drawLayer.style.left = "0";
+drawLayer.style.top = "0";
+
+drawLayer.style.cursor = "crosshair";
+
+drawLayer.style.pointerEvents =
+  selectedAction === "whiteout"
+    ? "auto"
+    : "none";
+
+const drawCtx =
+  drawLayer.getContext("2d");
+
+    let startX = 0;
+    let startY = 0;
+    let isDrawing = false;
+
+    /* START DRAW */
+drawLayer.addEventListener(
+  "mousedown",
+  (e) => {
+
+    if (selectedAction !== 'whiteout')
+      return;
+
+    isDrawing = true;
+
+    const rect =
+      drawLayer.getBoundingClientRect();
+
+    const scaleX =
+      drawLayer.width / rect.width;
+
+    const scaleY =
+      drawLayer.height / rect.height;
+
+    startX =
+      (e.clientX - rect.left) * scaleX;
+
+    startY =
+      (e.clientY - rect.top) * scaleY;
+  }
+);
+
+/* DRAW PREVIEW */
+drawLayer.addEventListener(
+  "mousemove",
+  (e) => {
+
+    if (!isDrawing) return;
+
+    const rect =
+      drawLayer.getBoundingClientRect();
+
+    const scaleX =
+      drawLayer.width / rect.width;
+
+    const scaleY =
+      drawLayer.height / rect.height;
+
+    const currentX =
+      (e.clientX - rect.left) * scaleX;
+
+    const currentY =
+      (e.clientY - rect.top) * scaleY;
+
+    // clear layer
+    drawCtx.clearRect(
+      0,
+      0,
+      drawLayer.width,
+      drawLayer.height
+    );
+
+    // redraw previous whiteouts
+    whiteoutAreas
+      .filter(a => a.page === pageNum)
+      .forEach(a => {
+
+        drawCtx.fillStyle = "#ffffff";
+
+        drawCtx.fillRect(
+          a.x,
+          a.y,
+          a.width,
+          a.height
+        );
+      });
+
+    const width =
+      currentX - startX;
+
+    const height =
+      currentY - startY;
+
+    // white erase preview
+    drawCtx.fillStyle = "#ffffff";
+
+    drawCtx.fillRect(
+      startX,
+      startY,
+      width,
+      height
+    );
+
+    // red border preview
+    drawCtx.strokeStyle = "#ff3b30";
+    drawCtx.lineWidth = 1;
+
+    drawCtx.strokeRect(
+      startX,
+      startY,
+      width,
+      height
+    );
+  }
+);
+
+/* SAVE WHITEOUT */
+drawLayer.addEventListener("mouseup", (e) => {
+
+  if (!isDrawing) return;
+
+  isDrawing = false;
+
+  const rect =
+    drawLayer.getBoundingClientRect();
+
+  const scaleX =
+    drawLayer.width / rect.width;
+
+  const scaleY =
+    drawLayer.height / rect.height;
+
+  const endX =
+    (e.clientX - rect.left) * scaleX;
+
+  const endY =
+    (e.clientY - rect.top) * scaleY;
+
+  const width =
+    Math.abs(endX - startX);
+
+  const height =
+    Math.abs(endY - startY);
+
+  const x =
+    Math.min(startX, endX);
+
+  const y =
+    Math.min(startY, endY);
+
+  whiteoutAreas.push({
+    page: pageNum,
+    x,
+    y,
+    width,
+    height
+  });
+
+  drawCtx.fillStyle = "#ffffff";
+
+  drawCtx.fillRect(
+    x,
+    y,
+    width,
+    height
+  );
+
+  console.log(whiteoutAreas);
+});
+
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+
+    /* append AFTER render completes */
+    wrapper.appendChild(canvas);
+
+    wrapper.appendChild(drawLayer);
+
+    pdfViewer.appendChild(wrapper);
+  }
+}
+
 /* ───────── FILE HANDLING ───────── */
+// function setFiles(raw) {
+//   // files = Array.from(raw);
+//   files = Array.from(raw).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+//   renderFiles();
+//   updateStats();
+//   updateBtn();
+// }
+
 function setFiles(raw) {
-  // files = Array.from(raw);
-  files = Array.from(raw).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+  files = Array.from(raw).sort((a, b) =>
+    a.name.localeCompare(
+      b.name,
+      undefined,
+      {
+        numeric: true,
+        sensitivity: 'base'
+      }
+    )
+  );
+
   renderFiles();
   updateStats();
   updateBtn();
+
+  /* AUTO PDF PREVIEW */
+  if (
+    files.length === 1 &&
+    getExt(files[0].name) === 'pdf'
+  ) {
+    renderPDF(files[0]);
+  }
 }
 
 function removeFile(index) {
@@ -457,6 +856,9 @@ function removeFile(index) {
   renderFiles();
   updateStats();
   updateBtn();
+  if (files.length === 1 && getExt(files[0].name) === 'pdf') {
+    renderPDF(files[0]);
+  }
 }
 
 function getExt(name) {
@@ -569,6 +971,7 @@ document.querySelectorAll('.fc-btn').forEach(btn => {
     btn.setAttribute('aria-pressed', 'true');
 
     selectedAction = btn.dataset.action;
+   // whiteoutToolbar.style.display = "none";
 
     // 2. Check if files are even uploaded
     if (!files.length) {
@@ -638,7 +1041,66 @@ document.querySelectorAll('.fc-btn').forEach(btn => {
       showToast("Only PDF allowed", true);
       btn.classList.remove('selected');
       selectedAction = null;
+    }else if (selectedAction === 'whiteout') {
+
+      if (!hasPDF) {
+
+        showToast("Only PDF allowed", true);
+
+        btn.classList.remove('selected');
+
+        selectedAction = null;
+
+      } else {
+
+        // 1. Reset previous viewer state FIRST
+        const viewer = document.getElementById("pdfViewer");
+        viewer.innerHTML = "";
+        viewer.classList.add("show-pdf-editor");
+
+        // 2. Show controls immediately (but safe)
+        pdfPreviewActions.style.display = "flex";
+
+        // 3. Ensure state is clean before render
+        whiteoutAreas = [];
+
+        // 4. Render PDF
+        renderPDF(files[0]);
+
+        // 5. Safety: re-affirm UI after render (fix race condition)
+        setTimeout(() => {
+          pdfPreviewActions.style.display = "flex";
+        }, 50);
+      }
     }
+
+    /* WATERMARK */
+    else if (selectedAction === 'watermarkpdf' && !hasPDF) {
+
+      showToast("Only PDF allowed", true);
+
+      btn.classList.remove('selected');
+
+      selectedAction = null;
+    }
+
+    /* SIGN PDF */
+    else if (selectedAction === 'signpdf') {
+
+      if (!hasPDF) {
+
+        showToast("Only PDF allowed", true);
+
+        btn.classList.remove('selected');
+
+        selectedAction = null;
+
+      } else {
+
+        signatureModal.classList.add('show');
+      }
+    }
+
 
     // 6. Handle Modals for specific tools
     if (selectedAction === 'splitpdf') {
@@ -764,6 +1226,126 @@ applyPdfExcel.onclick = () => {
   showToast("Settings applied ✓");
 };
 
+/* ───────── SIGNATURE MODAL ───────── */
+
+clearSignature.onclick = () => {
+
+  signaturePad.clear();
+
+};
+
+saveSignature.onclick = () => {
+
+  if (signaturePad.isEmpty()) {
+
+    showToast("Draw signature first", true);
+
+    return;
+  }
+
+  signatureImage = signaturePad.toDataURL("image/png");
+
+  signatureModal.classList.remove('show');
+
+  showToast("Signature saved ✓");
+};
+
+
+/* WHITEOUT SAVE */
+
+const saveWhiteoutBtn =
+  document.getElementById("downloadWhiteoutBtn");
+
+saveWhiteoutBtn.onclick = async () => {
+
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF();
+
+  const pages =
+    document.querySelectorAll(".pdf-page");
+
+  for (let i = 0; i < pages.length; i++) {
+
+    const page =
+      pages[i];
+
+    const canvas = page.querySelectorAll("canvas")[0];
+
+    const drawLayer =
+      page.querySelectorAll("canvas")[1];
+
+    // CREATE MERGED CANVAS
+    const merged =
+      document.createElement("canvas");
+
+    merged.width = canvas.width;
+    merged.height = canvas.height;
+
+    const ctx =
+      merged.getContext("2d");
+
+    // ORIGINAL PDF
+    ctx.drawImage(canvas, 0, 0);
+
+    // WHITEOUT LAYER
+    ctx.drawImage(drawLayer, 0, 0);
+
+    const imgData =
+      merged.toDataURL("image/jpeg", 1.0);
+
+    const pdfWidth =
+      pdf.internal.pageSize.getWidth();
+
+    const pdfHeight =
+      (merged.height * pdfWidth) / merged.width;
+
+    if (i > 0)
+      pdf.addPage();
+
+    pdf.addImage(
+      imgData,
+      "JPEG",
+      0,
+      0,
+      pdfWidth,
+      pdfHeight
+    );
+  }
+
+  pdf.save("whiteout.pdf");
+
+  showToast("Whiteout PDF Downloaded ✓");
+};
+
+/* CLOSE PDF PREVIEW */
+closePreviewBtn.onclick = () => {
+
+  const viewer = document.getElementById("pdfViewer");
+
+  // 1. Clear preview
+  viewer.innerHTML = "";
+
+  // 2. Exit editor mode completely
+  viewer.classList.remove("show-pdf-editor");
+
+  // 3. Hide floating controls
+  pdfPreviewActions.style.display = "none";
+
+  // 4. Reset state
+  selectedAction = null;
+  whiteoutAreas = [];
+
+  // 5. Reset buttons
+  document.querySelectorAll(".fc-btn")
+    .forEach(btn => btn.classList.remove("selected"));
+
+  updateBtn();
+
+  // 6. Safety restore layout (important)
+  document.querySelector(".fc-wrap").style.display = "block";
+};
+
 /* ───────── CONVERT ───────── */
 convertBtn.addEventListener('click', async () => {
   if (!files.length || !selectedAction) return;
@@ -771,6 +1353,14 @@ convertBtn.addEventListener('click', async () => {
   const fd = new FormData();
   files.forEach(f => fd.append('files', f));
   fd.append('action', selectedAction);
+
+   /* FRONTEND WHITEOUT DOWNLOAD */
+  if (selectedAction === 'whiteout') {
+
+    saveWhiteoutBtn.click();
+
+    return;
+  }
 
   if (selectedAction === 'splitpdf') {
     fd.append('page_range', pageRangeInput.value);
@@ -788,6 +1378,19 @@ convertBtn.addEventListener('click', async () => {
     fd.append('orientation', excelOrientation.value);
     fd.append('fit', excelFit.value);
   }
+
+  /* SIGNATURE */
+
+  if (selectedAction === 'signpdf') {
+    fd.append('signature_data', signatureImage);
+  }
+
+  // if (selectedAction === 'whiteout') {
+  //   fd.append(
+  //     'whiteout_areas',
+  //     JSON.stringify(whiteoutAreas)
+  //   );
+  // }
 
   convertLbl.textContent = "Converting...";
   convertBtn.disabled = true;
@@ -820,6 +1423,9 @@ convertBtn.addEventListener('click', async () => {
     else if (selectedAction === "mergepdf") ext = "pdf";
     else if (selectedAction === "splitpdf") ext = "pdf";
     else if (selectedAction === "compresspdf") ext = "pdf";
+    else if (selectedAction === "whiteout") ext = "pdf";
+    else if (selectedAction === "watermarkpdf") ext = "pdf";
+    else if (selectedAction === "signpdf") ext = "pdf";
 
     a.download = `${baseName}.${ext}`;
 

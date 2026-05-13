@@ -54,11 +54,21 @@
       align-items: center;
     }
 
-    .fc-inner {
+    /* .fc-inner {
       width: 100%;
       max-width: 520px;
       display: flex;
       flex-direction: column;
+    } */
+
+    .fc-inner {
+      width: 100%;
+      max-width: 1400px;
+
+      display: flex;
+      flex-direction: column;
+
+      margin: 0 auto;
     }
 
     /* ─── Background Glow ────────────────────────────────────── */
@@ -116,7 +126,12 @@
       border: 1.5px dashed rgba(108,99,255,0.4);
       border-radius: var(--r-xl);
       background: rgba(108,99,255,0.04);
-      padding: clamp(1.5rem, 4vw, 2.5rem) var(--sp-lg);
+      /* padding: clamp(1.5rem, 4vw, 2.5rem) var(--sp-lg); */
+      min-height: 260px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s, transform 0.2s;
@@ -247,11 +262,23 @@
     }
 
     /* ─── Conversion Grid ─────────────────────────────────────── */
-    .fc-grid {
+    /* .fc-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-bottom: var(--sp-lg);
+      z-index: 1;
+    } */
+
+    .fc-grid {
+      display: grid;
+
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+
+      gap: 12px;
+
+      margin-bottom: var(--sp-lg);
+
       z-index: 1;
     }
 
@@ -447,16 +474,16 @@
 }
 
     /* ─── Responsive: Tablet ──────────────────────────────────── */
-    @media (min-width: 640px) {
+    /* @media (min-width: 640px) {
       .fc-wrap  { padding: var(--sp-2xl) var(--sp-xl); }
       .fc-inner { max-width: 560px; }
-    }
+    } */
 
     /* ─── Responsive: Desktop ─────────────────────────────────── */
-    @media (min-width: 1024px) {
+    /* @media (min-width: 1024px) {
       .fc-wrap  { padding: 3rem 2rem; }
       .fc-inner { max-width: 600px; }
-    }
+    } */
 
     /* ─── Responsive: Small Mobile ≤ 380px ───────────────────── */
     @media (max-width: 380px) {
@@ -511,8 +538,12 @@
 #excelPreview {
   background: white;
   margin: auto;
+
+  width: fit-content;
+  max-width: 100%;
+
   transform-origin: top center;
-  transform: scale(0.35); /* 👈 THIS CONTROLS SIZE */
+
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
@@ -537,4 +568,187 @@
 #excelPreview td {
   border: 1px solid #ddd;
   padding: 4px;
+}
+
+#pdfViewer {
+  width: 100%;
+  overflow: auto;
+
+  margin-top: 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  padding: 20px;
+
+  border-radius: 20px;
+
+  background: rgba(255,255,255,0.03);
+}
+
+.pdf-page {
+  position: relative;
+  margin: auto;
+}
+
+
+/* .pdf-page canvas {
+  display: block;
+
+  width: 100%;
+  max-width: 794px;
+
+  height: auto;
+
+  border-radius: 14px;
+} */
+
+.pdf-page canvas {
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  border-radius: 14px;
+
+  background: white;
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+}
+
+/* .pdf-page {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto 20px;
+} */
+
+.pdf-page {
+  position: relative;
+
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  justify-content: center;
+}
+
+/* .pdf-page canvas {
+  display: block;
+  max-width: 100%;
+} */
+
+/* ===== PDF WHITEOUT MODAL FIX ===== */
+
+#pdfViewer{
+  display:none;
+}
+
+/* Show only during whiteout */
+#pdfViewer.show-pdf-editor{
+  display:flex;
+
+  position: fixed;
+  inset: 0;
+
+  z-index: 9998;
+
+  background: rgba(0,0,0,0.92);
+
+  padding: 40px;
+
+  overflow: auto;
+
+  justify-content: flex-start;
+  align-items: center;
+
+  flex-direction: column;
+}
+
+/* A4 look */
+/*#pdfViewer .pdf-page canvas{
+  width: 794px !important;
+  max-width: 794px !important;
+
+  background: white;
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+
+  border-radius: 10px;
+}*/
+
+/* Whiteout toolbar floating */
+#whiteoutToolbar{
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+
+  z-index: 10000;
+
+  display:none;
+}
+
+
+.pdf-page canvas {
+  display: block;
+}
+
+.pdf-page canvas:first-child {
+  position: relative;
+  z-index: 1;
+}
+
+.pdf-page canvas:last-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  background: transparent !important;
+}
+
+/*Then use responsive scaling ONLY on mobile: */
+@media (max-width: 768px) {
+  #excelPreview {
+    transform: scale(0.55);
+  }
+}
+
+@media (max-width: 480px) {
+  #excelPreview {
+    transform: scale(0.38);
+  }
+}
+
+@media (min-width: 1200px) {
+  .fc-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .fc-inner {
+    max-width: 900px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .fc-inner {
+    max-width: 1400px;
+  }
+}
+
+#pdfPreviewActions {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 10px;
+  z-index: 99999;
+  background: rgba(20, 20, 30, 0.95);
+  padding: 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
 }
